@@ -6,8 +6,14 @@ COMBO_PLT = $(HOME)/.erl_cowboy_combo_dialyzer_plt
 
 all: compile
 
-compile:
+compile: get-deps
 	./rebar compile
+
+get-deps:
+	./rebar get-deps
+
+update-deps:
+	./rebar update-deps
 
 eunit: compile
 	./rebar -v skip_deps=true eunit
@@ -15,14 +21,19 @@ eunit: compile
 ct: compile
 	./rebar -v ct $(CTARGS)
 
-clean:
+clean: clean
 	./rebar clean
 
+deep-dlean:
+	rm -fr deps/*/ebin/*
+
 build_plt: compile
-	dialyzer --build_plt --output_plt $(COMBO_PLT) --apps $(APPS)
+	dialyzer --build_plt --output_plt $(COMBO_PLT) --apps $(APPS) \
+		deps/*/ebin
 
 check_plt: compile
-	dialyzer --check_plt --plt $(COMBO_PLT) --apps $(APPS)
+	dialyzer --check_plt --plt $(COMBO_PLT) --apps $(APPS) \
+		deps/*/ebin
 
 dialyzer: compile
 	@echo
