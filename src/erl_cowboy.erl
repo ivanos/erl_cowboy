@@ -3,8 +3,6 @@
 
 -include("erl_cowboy_logger.hrl").
 
--define(STRING(S), ??S).
-
 %% ------------------------------------------------------------------
 %% API Function Exports
 %% ------------------------------------------------------------------
@@ -36,8 +34,8 @@ routing(Key, Routing) ->
 init(_Args) ->
     Port = application:get_env(erl_cowboy, port, 80),
     Listeners = application:get_env(erl_cowboy, listeners, 100),
-    {ok, Pid} = start_cowboy(Port, Listeners),
-    {ok, #{cowboy_sup => Pid, routes => #{}}}.
+    gen_server:cast(?MODULE, start),
+    {ok, #{port => Port, listeners => Listeners, routes => #{}}}.
 
 handle_call({routing, Key, NewRoute}, _From, State = #{routes := Routes}) ->
     NewRoutes = maps:put(Key, NewRoute, Routes),
@@ -46,6 +44,9 @@ handle_call({routing, Key, NewRoute}, _From, State = #{routes := Routes}) ->
 handle_call(Request, _From, State) ->
     {stop, {notimplemented, Request}, State}.
 
+handle_cast(start, State = #{port := Port, listeners := Listeners}) ->
+    {ok, Pid} = start_cowboy(Port, Listeners),
+    {noreply, State#{pid => Pid}};
 handle_cast(Msg, State) ->
     {stop, {notimplemented, Msg}, State}.
 
@@ -63,8 +64,8 @@ code_change(_OldVsn, State, _Extra) ->
 %% ------------------------------------------------------------------
 
 start_cowboy(Port, Listeners) ->
-    ?INFO([?STRING(?MODULE), " listening on port ~p~n"], [Port]),
-    cowboy:start_http(?MODULE, Listeners, [{port, Port}], []).
+    ?INFO("~p listening on port ~p~n", [?MODULE, Port]),
+    cowboy:start_http(?MODULE, Listeners, [{port, Port}], [{env, []}]).
 
 update_cowboy(Routes) ->
     RouteList = lists:flatten(maps:fold(
