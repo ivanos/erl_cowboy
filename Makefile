@@ -2,7 +2,7 @@ APPS = kernel stdlib sasl erts ssl tools runtime_tools crypto inets \
 	public_key mnesia syntax_tools compiler
 COMBO_PLT = $(HOME)/.erl_cowboy_combo_dialyzer_plt
 
-.PHONY: all compile test clean ct
+.PHONY: all compile test clean ct run tls
 
 all: compile
 
@@ -47,3 +47,10 @@ compile test clean: rebar
 rebar:
 	wget -c http://github.com/rebar/rebar/wiki/rebar
 	chmod +x $@
+
+run:
+	erl -pa ebin/ -pa deps/*/ebin -config sys \
+	-eval "application:ensure_all_started(erl_cowboy)"
+
+tls:
+	@./make_tls
