@@ -3,7 +3,7 @@
 command -v openssl >/dev/null 2>&1 || \
     ( echo >&2 "openssl required but not installed"; exit 1 )
 
-PRIV_DIR="priv"
+PRIV_DIR="priv/erl_cowboy"
 PREFIX="dummy"
 PASS=""
 
@@ -24,7 +24,7 @@ echo "Update the erl_cowboy section of the sys.config file (it is commented by d
 "[{erl_cowboy, [
                {port, 8080},
                {tls_enabled, true},
-               {tls_opts, [{certfile, \"${PRIV_DIR}/${PREFIX}.crt\"},
-                           {keyfile, \"${PRIV_DIR}/${PREFIX}.key\"},
+               {tls_opts, [{certfile, \"${PREFIX}.crt\"},
+                           {keyfile, \"${PREFIX}.key\"},
                            {password, \"${PASS}\"}]}
               ]}]."

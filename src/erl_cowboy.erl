@@ -36,11 +36,18 @@ init(_Args) ->
     Listeners = application:get_env(erl_cowboy, listeners, 100),
     TLSEnabled = application:get_env(erl_cowboy, tls_enabled, false),
     TLSOpts = application:get_env(erl_cowboy, tls_opts, undefined),
+    PrivDir = case application:get_env(erl_cowboy, app, undefined) of
+                  undefined ->
+                      "./priv/erl_cowboy";
+                  MasterApp ->
+                      filename:join([code:priv_dir(MasterApp), "erl_cowboy"])
+              end,
     gen_server:cast(?MODULE, start),
     {ok, #{port => Port, listeners => Listeners,
            routes => #{},
            tls_enabled => TLSEnabled,
-           tls_opts => TLSOpts}}.
+           tls_opts => TLSOpts,
+           priv_dir => PrivDir}}.
 
 handle_call({routing, Key, NewRoute}, _From, State = #{routes := Routes}) ->
     NewRoutes = maps:put(Key, NewRoute, Routes),
@@ -57,8 +64,9 @@ handle_cast(start, State = #{port := Port,
 handle_cast(start, State = #{port := Port,
                              listeners := Listeners,
                              tls_enabled := true,
-                             tls_opts := TLSOpts}) ->
-    {ok, Pid} = start_cowboy_with_tls(Port, Listeners, TLSOpts),
+                             tls_opts := TLSOpts,
+                            priv_dir := PrivDir}) ->
+    {ok, Pid} = start_cowboy_with_tls(Port, Listeners, TLSOpts, PrivDir),
     {noreply, State#{pid => Pid}};
 handle_cast(Msg, State) ->
     {stop, {notimplemented, Msg}, State}.
@@ -80,13 +88,15 @@ start_cowboy(Port, Listeners) ->
     ?INFO("~p listening on port ~p~n", [?MODULE, Port]),
     cowboy:start_http(?MODULE, Listeners, [{port, Port}], [{env, []}]).
 
-start_cowboy_with_tls(Port, Listeners, TLSOpts) ->
+start_cowboy_with_tls(Port, Listeners, TLSOpts, PrivDir) ->
     TLSCert = proplists:get_value(certfile, TLSOpts, undefined),
     TLSKey = proplists:get_value(keyfile, TLSOpts, undefined),
     TLSKeyPass = proplists:get_value(password, TLSOpts, undefined),
     ?INFO("~p listening on port ~p with TLS enabled~n\tcert: ~s~n\tkey: ~s)",
           [?MODULE, Port, TLSCert, TLSKey]),
-    TransportOpts = [{port, Port}, {certfile, TLSCert}, {keyfile, TLSKey},
+    TransportOpts = [{port, Port},
+                     {certfile, filename:join([PrivDir,TLSCert])},
+                     {keyfile, filename:join([PrivDir, TLSKey])},
                      {password, TLSKeyPass}],
     cowboy:start_https(?MODULE, Listeners, TransportOpts, [{env, []}]).
 

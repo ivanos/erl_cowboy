@@ -53,4 +53,4 @@ run:
 	-eval "application:ensure_all_started(erl_cowboy)"
 
 tls:
-	@./make_tls
+	@./make_tls.sh
