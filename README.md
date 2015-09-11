@@ -23,6 +23,7 @@ Variable | Description
 -------- | -----------
 port | cowboy listener port for http
 listeners | number of listeners
+app | master application that includes `erl_cowboy`; required when used as dependency
 tls_enabled | `true` or `false`
 tls_opts | property list with TLS configuration; the options are required when TLS is enabled
 
